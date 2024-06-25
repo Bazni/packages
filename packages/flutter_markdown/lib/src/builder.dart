@@ -174,6 +174,7 @@ class MarkdownBuilder implements md.NodeVisitor {
   final List<_InlineElement> _inlines = <_InlineElement>[];
   final List<GestureRecognizer> _linkHandlers = <GestureRecognizer>[];
   final ScrollController _preScrollController = ScrollController();
+  final ScrollController _tableScrollController = ScrollController();
   String? _currentBlockTag;
   String? _lastVisitedTag;
   bool _isInBlockquote = false;
@@ -431,12 +432,29 @@ class MarkdownBuilder implements md.NodeVisitor {
           );
         }
       } else if (tag == 'table') {
-        child = Table(
-          defaultColumnWidth: styleSheet.tableColumnWidth!,
-          defaultVerticalAlignment: styleSheet.tableVerticalAlignment,
-          border: styleSheet.tableBorder,
-          children: _tables.removeLast().rows,
-        );
+        if (styleSheet.tableColumnWidth is IntrinsicColumnWidth ||
+            styleSheet.tableColumnWidth is FixedColumnWidth) {
+          child = Scrollbar(
+            controller: _tableScrollController,
+            child: SingleChildScrollView(
+              controller: _tableScrollController,
+              scrollDirection: Axis.horizontal,
+              child: Table(
+                defaultColumnWidth: styleSheet.tableColumnWidth!,
+                defaultVerticalAlignment: styleSheet.tableVerticalAlignment,
+                border: styleSheet.tableBorder,
+                children: _tables.removeLast().rows,
+              ),
+            ),
+          );
+        } else {
+          child = Table(
+            defaultColumnWidth: styleSheet.tableColumnWidth!,
+            defaultVerticalAlignment: styleSheet.tableVerticalAlignment,
+            border: styleSheet.tableBorder,
+            children: _tables.removeLast().rows,
+          );
+        }
       } else if (tag == 'blockquote') {
         _isInBlockquote = false;
         child = DecoratedBox(
